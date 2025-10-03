@@ -6,7 +6,6 @@ from fastapi.responses import RedirectResponse
 
 
 webApi.mount("/js", static_js, name="js")
-webApi.mount("/css", static_css, name="css")
 
 @webApi.get("/login", response_class=HTMLResponse)
 async def loader_page(request: Request):

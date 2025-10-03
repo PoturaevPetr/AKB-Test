@@ -25,7 +25,6 @@ webApi.add_middleware(
 
 templates = Jinja2Templates(directory=os.path.join(os.getcwd(), config['APPLICATION']['template_folder'], 'pages'))
 static_js =  StaticFiles(directory=os.path.join(os.getcwd(), config['APPLICATION']['template_folder'], 'static', 'js'))
-static_css =  StaticFiles(directory=os.path.join(os.getcwd(), config['APPLICATION']['template_folder'], 'static', 'css'))
 
 class AppConfig:
     SECRET_KEY = "2qwtq2"  # Замените на свой секретный ключ
