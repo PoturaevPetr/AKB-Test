@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     # Not needed if you setup a migration system like Alembic
     await create_db_and_tables()
+    await create_admin_user()
     yield
 
 webApi = FastAPI(lifespan=lifespan)

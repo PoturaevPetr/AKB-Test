@@ -60,7 +60,7 @@ async def create_admin_user():
 async def create_db_and_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await create_admin_user()
+        
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
