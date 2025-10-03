@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: tonimo83
+      POSTGRES_DB: AKB-Test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: fastapi_app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:tonimo83@db:5432/AKB-Test
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: ["uvicorn", "run:webApi", "--host", "0.0.0.0", "--port", "8000"]
+
+  ui:
+    image: nginx:alpine
+    container_name: templates
+    ports:
+      - "80:80"
+    volumes:
+      - ./templates:/usr/share/nginx/html:ro
+    # Предположим, что статические файлы UI лежат в папке ./ui
+
+volumes:
+  postgres_data:
