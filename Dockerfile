@@ -13,6 +13,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем весь проект
 COPY . .
 
+COPY migrate.sh /migrate.sh
+RUN chmod +x /migrate.sh
+
+# Объявляем точку входа
+ENTRYPOINT ["/migrate.sh"]
+
 # Открываем порт для API
 EXPOSE 8000
 
