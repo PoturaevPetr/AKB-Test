@@ -11,6 +11,7 @@ async def get_device(
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session)
 ):
+    
     try:
         device_uuid = uuid.UUID(device_id)
     except ValueError:
@@ -29,14 +30,16 @@ async def get_device(
 @webApi.post("/api/device", response_model=DeviceSchema)
 async def post_device(
     form: PostDevice, 
-    user: User = Depends(current_active_user),
+    user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
+    
     device = Device(
         name=form.name,
         version=form.version,
         state=form.state,
-        max_batteries=form.max_batteries
+        max_batteries=form.max_batteries,
+        device_api_id=form.device_api_id
     )
     db.add(device)
     try:
@@ -58,7 +61,7 @@ async def post_device(
 @webApi.put("/api/device", response_model=DeviceSchema)
 async def put_device(
     form: PutDevice,
-    user: User = Depends(current_active_user),
+    user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
     # Найти устройство по ID
@@ -79,6 +82,8 @@ async def put_device(
         device.state = form.state
     if form.max_batteries is not None:
         device.max_batteries = form.max_batteries
+    if form.device_api_id is not None:
+        device.device_api_id = form.device_api_id
 
     try:
         # Попытка сохранить изменения
@@ -100,14 +105,27 @@ async def put_device(
     return device
 
 @webApi.delete("/api/device/{device_id}")
-async def delete_device(device_id: str, user: User = Depends(current_active_user)):
-    pass
+async def delete_device(
+    device_id: str, 
+    user: User = Depends(superuser_required), 
+    db: AsyncSession = Depends(get_async_session)
+):
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    # Опционально, проверить права доступа
+    
+    await db.delete(device)
+    await db.commit()
+    return {"detail": "Device and its batteries deleted"}
 
 @webApi.get("/api/devices", response_model=List[DeviceSchema])
 async def get_devices(
-    user: User = Depends(current_active_user),
+    user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
     result = await db.execute(select(Device))
     devices = result.scalars().all()
     return devices
+

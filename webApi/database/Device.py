@@ -8,4 +8,5 @@ class Device(Base):
     version = Column(Text)
     state = Column(Boolean, default=True)
     max_batteries = Column(Integer)
-    batteries = relationship("Battery", backref="device")
+    device_api_id = Column(String(128))
+    batteries = relationship("Battery", backref="device", cascade="all, delete-orphan")

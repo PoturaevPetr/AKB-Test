@@ -11,6 +11,65 @@ function getDevices() {
   })
 }
 
+localStorage.removeItem("devices")
+localStorage.removeItem("signals")
+localStorage.removeItem("user")
+
+const Signals = new Model(
+  tablename = "signals",
+  columns = [
+    "id",
+    "name",
+    "value",
+  ]
+)
+
+const Devices = new Model(
+  tablename = "devices",
+  columns = [
+    "id",
+    "name",
+  ]
+)
+
+const User = new Model(
+  tablename = "user",
+  column = [
+    "email",
+    "id",
+    "is_active",
+    "is_superuser",
+    "is_verified",
+  ]
+)
+
+
+const session = new Session();
+
+function getDevicesApi() {
+
+  $.ajax({
+    type: "get",
+    url: "/devices/list",
+    success: (data) => {
+      $("#device_api_id").empty()
+      $("#device_api_id").append("<option value=''>Выберите устройство</option>")
+      data.forEach(device => {
+        $("#device_api_id").append(`<option value='${device.id}'>${device.name}</option>`)
+
+        const signals = device.signals
+        delete device.signals
+        const newDevices = session.query(Devices).add(device);
+        signals.forEach((signal) => {
+          signal['device_id'] = device.id
+          const newSignals = session.query(Signals).add(signal);
+        })
+      });
+    }
+  })
+}
+
+
 function deviceHTML(device) {
   return `<div data-device_id="${device.id}" class="device-card bg-white rounded-lg shadow-md p-4 mb-4 hover:shadow-xl transition-shadow duration-300">
             <h4 class="text-lg font-semibold text-gray-800 mb-2">Устройство: ${device.name}</h4>
@@ -28,32 +87,77 @@ function batteryHTML(battery) {
               <p class="text-gray-600"><strong>Емкость:</strong> ${battery.capacity}</p>
               <p class="text-gray-600"><strong>Срок службы (мес):</strong> ${battery.service_life}</p>
             </div>
-            <div class="ml-4 flex space-x-2">
-              <!-- Кнопка редактирования -->
+            ${session.query(User).first().is_superuser ? 
+            `<div class="ml-4 flex space-x-2">
               <button class="text-blue-500 hover:text-blue-700 p-2 rounded-full transition" title="Редактировать" data-battery_id='${battery.id}' id="editBattery">
-                <!-- SVG иконка редактирования -->
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2v-5m-4-4l4-4m0 0L15 4m4 4L19 8"></path>
                 </svg>
               </button>
-              <!-- Кнопка удаления -->
               <button class="text-red-500 hover:text-red-700 p-2 rounded-full transition" title="Удалить" id="deleteBattery" data-battery_id='${battery.id}'">
-                <!-- SVG иконка удаления -->
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7H5m14 0l-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7m5 4v6m4-6v6"></path>
                 </svg>
               </button>
+            </div>` : ''
+            }
+          </div>`
+}
+
+
+function deviceInfoHTML(device) {
+  return `<div class="bg-white rounded-lg shadow p-4 space-y-4 border border-gray-200">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-semibold text-gray-800">Устройство</h3>
+              ${session.query(User).first().is_superuser ? 
+              `<div class="flex">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition duration-200" data-device_id="${device.id}" id="edit-device">
+                  Изменить
+                </button>
+                <button class="ms-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded shadow transition duration-200" data-device_id="${device.id}" id="delete-device">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7H5m14 0l-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7m5 4v6m4-6v6"></path>
+                  </svg>
+                </button>
+              </div>` : ''
+              }
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-gray-700">Название:</span>
+                <span class="text-gray-900">${device.name}</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-gray-700">Версия:</span>
+                <span class="text-gray-900">${device.version}</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-gray-700">Состояние:</span>
+                <span class="${device.state ? 'text-green-600' : 'text-red-600'} font-semibold">
+                  ${device.state ? 'Включено' : 'Выключено'}
+                </span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-gray-700">Максимум АКБ:</span>
+                <span class="text-gray-900">${device.max_batteries}</span>
+              </div>
             </div>
           </div>`
-} 
-
+}
 function getUser() {
   $.ajax({
-    type: "GET", 
+    type: "GET",
     url: "/users/me",
     success: (data) => {
       $('.user-name').text(data.email)
       $('.user-name-short').text(data.email[0])
+      if (!data.is_superuser) {
+        $("#openModal").remove()
+        $("#openBatteryModal").remove()
+        $("#deviceModal").remove()
+        $("#batteryModal").remove()
+      }
+      session.query(User).add(data);
     }
   })
 }
@@ -61,6 +165,7 @@ function getUser() {
 $(document).ready(function () {
   getUser()
   getDevices()
+  getDevicesApi()
   $("#logoutBtn").on('click', function () {
     $.ajax({
       url: '/auth/jwt/logout',
@@ -94,9 +199,10 @@ $(document).ready(function () {
     var name = $("#deviceName").val().trim();
     var version = $("#firmwareVersion").val().trim();
     var max_batteries = $("#max_batteries").val().trim();
+    var device_api_id = $("#device_api_id").find(":selected").attr("value");
 
     // Проверка на пустые поля
-    if (!name || !version || !max_batteries) {
+    if (!name || !version || !max_batteries || !device_api_id) {
       $('#error-device-alert').html('Пожалуйста, заполните все обязательные поля');
       $('#error-device-alert').slideDown(300);
       $('#error-device-alert').delay(2000).slideUp();
@@ -107,9 +213,19 @@ $(document).ready(function () {
       name: name,
       version: version,
       state: state_val == "on" ? true : false,
-      max_batteries: max_batteries
+      max_batteries: max_batteries,
+      device_api_id: device_api_id
     };
   }
+
+  $("#device_api_id").on("change", function () {
+    var device_api_id = $("#device_api_id").find(":selected").attr("value");
+    if (device_api_id) {
+      const signals = session.query(Signals).filter(signal => signal.device_id == device_api_id)
+      $("#max_batteries").val(signals.length)
+    }
+  })
+
   $(document).on("click", "#add_device", function () {
     const data = formDevice()
     if (data) {
@@ -175,36 +291,8 @@ $(document).ready(function () {
       success: (data) => {
         const device = data
         $("#openBatteryModal").data("device_id", device.id)
-        $('#device-info').html(`
-          <div class="bg-white rounded-lg shadow p-4 space-y-4 border border-gray-200">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xl font-semibold text-gray-800">Устройство</h3>
-              <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition duration-200" data-device_id="${device.id}" id="edit-device">
-                Изменить
-              </button>
-            </div>
-            <div class="space-y-2">
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Название:</span>
-                <span class="text-gray-900">${device.name}</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Версия:</span>
-                <span class="text-gray-900">${device.version}</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Состояние:</span>
-                <span class="${device.state ? 'text-green-600' : 'text-red-600'} font-semibold">
-                  ${device.state ? 'Включено' : 'Выключено'}
-                </span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Максимум АКБ:</span>
-                <span class="text-gray-900">${device.max_batteries}</span>
-              </div>
-            </div>
-          </div>
-        `);
+        $("#openBatteryModal").data("device_api_id", device.device_api_id)
+        $('#device-info').html(deviceInfoHTML(device));
 
         const batteries = device.batteries
         $("#battery-list").empty();
@@ -233,6 +321,7 @@ $(document).ready(function () {
         $("#firmwareVersion").val(device.version)
         $("#max_batteries").val(device.max_batteries)
         $("#save_device").data("device_id", device.id)
+        $("#device_api_id").find("option[value='" + device.device_api_id + "']").prop("selected", true)
       }
     })
   })
@@ -252,36 +341,7 @@ $(document).ready(function () {
         $('#deviceModal').addClass('hidden');
         $(`.device-card[data-device_id="${device.id}"]`).replaceWith(deviceHTML(device))
 
-        $('#device-info').html(`
-          <div class="bg-white rounded-lg shadow p-4 space-y-4 border border-gray-200">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xl font-semibold text-gray-800">Устройство</h3>
-              <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition duration-200" data-device_id="${device.id}" id="edit-device">
-                Изменить
-              </button>
-            </div>
-            <div class="space-y-2">
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Название:</span>
-                <span class="text-gray-900">${device.name}</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Версия:</span>
-                <span class="text-gray-900">${device.version}</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Состояние:</span>
-                <span class="${device.state ? 'text-green-600' : 'text-red-600'} font-semibold">
-                  ${device.state ? 'Включено' : 'Выключено'}
-                </span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-700">Максимум АКБ:</span>
-                <span class="text-gray-900">${device.max_batteries}</span>
-              </div>
-            </div>
-          </div>
-        `);
+        $('#device-info').html(deviceInfoHTML(device));
       }
     })
   })
@@ -291,6 +351,15 @@ $(document).ready(function () {
     $("#add_battery").removeClass('hidden');
     $("#save_battery").addClass('hidden');
     $(".modal-battery-name").text("Добавить устройство")
+
+    const device_api_id = $(this).data("device_api_id")
+    const signals = session.query(Signals).filter(signal => signal.device_id == device_api_id)
+    $("#signal_api_id").empty()
+    $("#signal_api_id").append("<option value=''>Выберите сигнал</option>")
+    signals.forEach((signal) => {
+      $("#signal_api_id").append(`<option value='${signal.id}'>${signal.name}</option>`)
+    })
+
     $("#add_battery").data("device_id", $(this).data("device_id"))
   })
 
@@ -305,10 +374,11 @@ $(document).ready(function () {
       name: $('#batteryName').val().trim(),
       voltage: $('#nominalVoltage').val().trim(),
       capacity: $('#residualCapacity').val().trim(),
-      service_life: $("#serviceLife").val().trim()
+      service_life: $("#serviceLife").val().trim(),
+      signal_api_id: $("#signal_api_id").find(":selected").attr("value")
     }
 
-    if (!data.name || !data.voltage || !data.service_life || !data.capacity) {
+    if (!data.name || !data.voltage || !data.service_life || !data.capacity || !data.signal_api_id) {
       $('#error-battery-alert').html('Пожалуйста, заполните все обязательные поля');
       $('#error-battery-alert').slideDown(300);
       $('#error-battery-alert').delay(2000).slideUp();
@@ -318,7 +388,7 @@ $(document).ready(function () {
     return data
   }
 
-  $("#add_battery").on("click", function() {
+  $("#add_battery").on("click", function () {
     var data = formBattery()
     if (data) {
       data['device_id'] = $(this).data("device_id")
@@ -329,7 +399,8 @@ $(document).ready(function () {
         data: JSON.stringify(data),
         success: (data) => {
           $("#battery-list").append(batteryHTML(data));
-        }, 
+          $('#batteryModal').addClass('hidden');
+        },
         error: function (xhr, status, error) {
           let message = 'Ошибка запроса';
           try {
@@ -347,18 +418,18 @@ $(document).ready(function () {
     }
   })
 
-  $(document).on("click", "#deleteBattery", function() {
+  $(document).on("click", "#deleteBattery", function () {
     var battery_id = $(this).data('battery_id')
     $.ajax({
       type: "DELETE",
       url: "/api/battery/" + battery_id,
       success: (data) => {
-        $(".card-battery[data-battery_id='" + battery_id +"']").remove()
+        $(".card-battery[data-battery_id='" + battery_id + "']").remove()
       }
     })
   })
 
-  $(document).on("click", "#editBattery", function() {
+  $(document).on("click", "#editBattery", function () {
     var battery_id = $(this).data('battery_id')
     $.ajax({
       type: "GET",
@@ -370,6 +441,15 @@ $(document).ready(function () {
         $('#residualCapacity').val(data.capacity)
         $("#serviceLife").val(data.service_life)
 
+        const signal = session.query(Signals).first(signal => signal.id === data.signal_api_id)
+        const signals = session.query(Signals).filter(item => item.device_id === signal.device_id)
+        $("#signal_api_id").empty()
+        $("#signal_api_id").append("<option value=''>Выберите сигнал</option>")
+        signals.forEach((signal) => {
+          $("#signal_api_id").append(`<option value='${signal.id}'>${signal.name}</option>`)
+        })
+        $("#signal_api_id").find("option[value='" + data.signal_api_id + "']").prop("selected", true)
+
         $("#batteryModal").removeClass("hidden")
         $("#add_battery").addClass('hidden');
         $("#save_battery").removeClass('hidden');
@@ -379,7 +459,21 @@ $(document).ready(function () {
     })
   })
 
-  $("#save_battery").on('click', function() {
+  $(document).on("click", "#delete-device", function () {
+    var device_id = $(this).data("device_id")
+    $.ajax({
+      type: "DELETE",
+      url: "/api/device/" + device_id,
+      success: (data) => {
+        $('#side-menu').removeClass('translate-x-0').addClass('translate-x-full');
+        $("#device-info").empty()
+        $("#battery-list").empty()
+        $(".device-card[data-device_id='" + device_id + "']").remove()
+      }
+    })
+  })
+
+  $("#save_battery").on('click', function () {
     var data = formBattery()
     if (data) {
       var battery_id = $(this).data('battery_id')
@@ -392,8 +486,8 @@ $(document).ready(function () {
         success: (data) => {
           const battery = data
           $("#batteryModal").addClass("hidden")
-          $(".card-battery[data-battery_id='" + battery_id +"']").replaceWith(batteryHTML(battery));
-        }, 
+          $(".card-battery[data-battery_id='" + battery_id + "']").replaceWith(batteryHTML(battery));
+        },
         error: function (xhr, status, error) {
           let message = 'Ошибка запроса';
           try {

@@ -10,6 +10,7 @@ import uuid
 from typing import Optional
 from fastapi import Depends, Request
 from webApi import AppConfig
+from fastapi import Depends, HTTPException
 
 # Ваша реализация UserManager
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
@@ -55,3 +56,8 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
 
 # Текущий активный пользователь
 current_active_user = fastapi_users.current_user(active=True)
+
+async def superuser_required(user: User = Depends(current_active_user)):
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return user

@@ -8,6 +8,7 @@ class Battery(Base):
     voltage = Column(Text, default="")
     capacity = Column(Text, default="")
     service_life = Column(Integer, default="")
+    signal_api_id = Column(String(128))
     device_id = Column(UUID(as_uuid=True), ForeignKey('device.id'))
 
     

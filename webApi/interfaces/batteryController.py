@@ -29,7 +29,7 @@ async def get_battery(
 @webApi.post("/api/battery", response_model=BatteryShema)
 async def post_battery(
     form: PostBattery,
-    user: User = Depends(current_active_user),
+    user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
     # Создаем новый объект Battery
@@ -38,7 +38,8 @@ async def post_battery(
         voltage=form.voltage,
         capacity=form.capacity,
         service_life=form.service_life,
-        device_id=form.device_id
+        device_id=form.device_id,
+        signal_api_id=form.signal_api_id
     )
     try:
         # Добавляем в сессию
@@ -57,7 +58,7 @@ async def post_battery(
 @webApi.put("/api/battery", response_model=BatteryShema)
 async def put_battery(
     form: PutBattery,
-    user: User = Depends(current_active_user),
+    user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
     # Найти батарею по battery_id
@@ -78,6 +79,8 @@ async def put_battery(
         battery.device_id = form.device_id
     if form.service_life is not None:
         battery.service_life = form.service_life
+    if form.signal_api_id is not None:
+        battery.signal_api_id = form.signal_api_id
 
     await db.commit()
     await db.refresh(battery)
@@ -88,7 +91,7 @@ async def put_battery(
 @webApi.delete("/api/battery/{battery_id}")
 async def delete_battery(
     battery_id: str = Path(..., description="ID батареи в формате UUID"), 
-    user: User = Depends(current_active_user),
+    user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
     # Найти батарею по ID

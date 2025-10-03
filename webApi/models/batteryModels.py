@@ -10,7 +10,8 @@ class BatteryShema(BaseModel):
     capacity: str
     device_id: uuid.UUID
     service_life: int
-
+    signal_api_id: str
+    
     class Config:
         orm_mode = True
 
@@ -20,6 +21,7 @@ class PostBattery(BaseModel):
     capacity: str
     device_id: uuid.UUID = Field(..., description="ID устройства для связи")
     service_life: Optional[int]
+    signal_api_id: str
 
 
 class PutBattery(BaseModel):
@@ -29,3 +31,4 @@ class PutBattery(BaseModel):
     capacity: Optional[str] = None
     device_id: Optional[str] = None
     service_life: Optional[int] = None
+    signal_api_id: Optional[str] = None
