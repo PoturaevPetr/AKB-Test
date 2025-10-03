@@ -122,7 +122,7 @@ async def delete_device(
 
 @webApi.get("/api/devices", response_model=List[DeviceSchema])
 async def get_devices(
-    user: User = Depends(superuser_required),
+    user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session)
 ):
     result = await db.execute(select(Device))
