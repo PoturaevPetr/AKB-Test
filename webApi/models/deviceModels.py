@@ -11,7 +11,7 @@ class DeviceSchema(BaseModel):
     state: bool
     max_batteries: int
     device_api_id: str
-
+    props: Optional[dict] = {}
     class Config:
         orm_mode = True
 
@@ -22,6 +22,7 @@ class DeviceWithBatterySchema(BaseModel):
     state: bool
     max_batteries: int
     device_api_id: str
+    props: Optional[dict] = {}
     batteries: List[BatteryShema]
 
     class Config:
@@ -34,6 +35,7 @@ class PostDevice(BaseModel):
     state: bool
     max_batteries: int
     device_api_id: str
+    props: Optional[dict] = None
 
 class PutDevice(BaseModel):
     id: uuid.UUID = Field(..., description="ID устройства для обновления")
@@ -42,3 +44,4 @@ class PutDevice(BaseModel):
     state: Optional[bool] = None
     max_batteries: Optional[int] = None
     device_api_id: Optional[str] = None
+    props: Optional[dict] = None

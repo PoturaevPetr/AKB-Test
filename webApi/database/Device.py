@@ -9,4 +9,6 @@ class Device(Base):
     state = Column(Boolean, default=True)
     max_batteries = Column(Integer)
     device_api_id = Column(String(128))
+    props = Column(JSON, default={})
     batteries = relationship("Battery", backref="device", cascade="all, delete-orphan")
+    

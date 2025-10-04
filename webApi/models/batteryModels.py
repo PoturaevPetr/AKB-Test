@@ -11,7 +11,7 @@ class BatteryShema(BaseModel):
     device_id: uuid.UUID
     service_life: int
     signal_api_id: str
-    
+    props: Optional[dict] = {}
     class Config:
         orm_mode = True
 
@@ -22,6 +22,7 @@ class PostBattery(BaseModel):
     device_id: uuid.UUID = Field(..., description="ID устройства для связи")
     service_life: Optional[int]
     signal_api_id: str
+    props: Optional[dict] = None
 
 
 class PutBattery(BaseModel):
@@ -32,3 +33,4 @@ class PutBattery(BaseModel):
     device_id: Optional[str] = None
     service_life: Optional[int] = None
     signal_api_id: Optional[str] = None
+    props: Optional[dict] = None
