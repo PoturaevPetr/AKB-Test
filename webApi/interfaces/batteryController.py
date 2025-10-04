@@ -32,7 +32,24 @@ async def post_battery(
     user: User = Depends(superuser_required),
     db: AsyncSession = Depends(get_async_session)
 ):
-    # Создаем новый объект Battery
+    # Получаем устройство, к которому привязана батарея
+    device = await db.get(Device, form.device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Устройство не найдено")
+    
+    # Подсчитываем текущие батареи для этого устройства
+    result = await db.execute(
+        select(func.count(Battery.id)).where(Battery.device_id == form.device_id)
+    )
+    current_battery_count = result.scalar()
+    
+    # Проверяем, превышает ли количество батарей максимум
+    if device.max_batteries is not None and current_battery_count >= device.max_batteries:
+        raise HTTPException(
+            status_code=400,
+            detail="Достигнуто максимальное количество батарей для этого устройства"
+        )
+    
     new_battery = Battery(
         name=form.name,
         voltage=form.voltage,
@@ -42,15 +59,11 @@ async def post_battery(
         signal_api_id=form.signal_api_id
     )
     try:
-        # Добавляем в сессию
         db.add(new_battery)
-        # Выполняем коммит
         await db.commit()
-        # Обновляем объект для получения данных из базы
         await db.refresh(new_battery)
     except Exception as e:
         await db.rollback()
-        # Обработка ошибок, например, связанных с уникальностью или другими ограничениями
         raise HTTPException(status_code=400, detail="Ошибка при добавлении батареи")
     
     return new_battery

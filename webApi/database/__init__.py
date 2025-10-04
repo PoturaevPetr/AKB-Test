@@ -10,7 +10,8 @@ from sqlalchemy import (
     Text, 
     JSON, 
     Date, 
-    Enum
+    Enum,
+    func
 )
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from collections.abc import AsyncGenerator
